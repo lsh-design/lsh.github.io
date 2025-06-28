@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" href="./index.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>lBlack</title>
+</head>
+
+<body>
+  <div class="wapper">
+    <div class="main-box">
+      <div class="input-box">
+        <input v-model='addName' type="text" placeholder="消费名称">
+        <input v-model='addPrice' type="text" name="" placeholder="消费价格">
+        <button @click='add()' class='btn btn-add'>添加账单</button>
+      </div>
+      <table>
+        <tr>
+          <th v-for="item in header">{{item}}</th>
+        </tr>
+        <tr v-for="(item, index) in info">
+          <td> {{index + 1}} </td>
+          <td> {{item.name}} </td>
+          <td :class="{hl:item.price > 1200}"> {{item.price}} </td>
+          <td class='tx-del' @click='del(item.code)'>删除</td>
+        </tr>
+        <tr>
+          <td colspan="4" class='all'> 消费总计:{{sumT}} </td>
+        </tr>
+      </table>
+    </div>
+    <div class='echarts-box' id='main'></div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <script src='https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js '></script>
+  <script>
+    const defaultData = [{
+      code: 1,
+      name: '手表',
+      price: '299.00',
+    },
+    {
+      code: 2,
+      name: '电视机',
+      price: '1299.00'
+    },
+    {
+      code: 3,
+      name: '空调',
+      price: '1388.00'
+    },
+    {
+      code: 4,
+      name: '洗衣机',
+      price: '699.00'
+    }];
+    const l = localStorage;
+    const v = new Vue({
+      el: '.main-box',
+      data: {
+        header: ['编号', '消费名称', '消费价格', '操作'],
+        addName: '',
+        addPrice: '',
+        info: [{
+          code: 1,
+          name: '手表',
+          price: '299.00',
+        },
+        {
+          code: 2,
+          name: '电视机',
+          price: '1299.00'
+        },
+        {
+          code: 3,
+          name: '空调',
+          price: '1388.00'
+        },
+        {
+          code: 4,
+          name: '洗衣机',
+          price: '699.00'
+
+        }],
+      },
+      created() {
+        this.info = this.getData();
+      },
+      mounted() {
+        this.myChart = echarts.init(document.querySelector('#main'));
+        this.myChart.setOption(
+          {
+            title: {
+              text: '消费表单统计',
+              left: 'center'
+            },
+            tooltip: {
+              trigger: 'item'
+            },
+            legend: {
+              orient: 'vertical',
+              left: 'left'
+            },
+            series: [
+              {
+                name: '消费单位',
+                type: 'pie',
+                radius: '50%',
+                data: this.info.map(item => ({ value: item.price, name: item.name })),
+                emphasis: {
+                  itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                  }
+                }
+              }
+            ]
+          }
+        )
+      },
+      computed: {
+        sumT() {
+          let total = this.info.reduce((sum, item) => sum + Number(item.price), 0);
+          return total.toFixed(2)
+        }
+      },
+      methods: {
+        storage() {
+          l.setItem('data', JSON.stringify(this.info));
+        },
+        getData() {
+          if (JSON.parse(l.getItem('data')))
+            return JSON.parse(l.getItem('data'));
+          else {
+            l.setItem('data', JSON.stringify(defaultData));
+            return defaultData;
+          }
+        },
+        render() {
+          this.myChart.setOption({
+            series: {
+              data: this.info.map(item => ({ value: item.price, name: item.name }))
+            }
+          })
+        },
+        add() {
+          if (this.addName !== '' && this.addPrice !== '' && Number(this.addPrice)) {
+            this.info.unshift({
+              code: +new Date(),
+              name: this.addName,
+              price: (+this.addPrice).toFixed(2)
+            })
+            this.addName = '';
+            this.addPrice = '';
+            this.render();
+          }
+          else alert("值为空或值格式错误！");
+          this.storage();
+        },
+        del(code) {
+          this.info = this.info.filter(item => item.code !== code);
+          this.render();
+          this.storage();
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>
